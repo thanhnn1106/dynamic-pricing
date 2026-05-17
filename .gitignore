@@ -1,0 +1,42 @@
+# =======================================================================
+# Dynamic Pricing — gitignore
+# =======================================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- Data (raw CSV không commit, file lớn) ---
+data/raw/*.csv
+data/raw/*.parquet
+data/processed/*.parquet
+data/processed/*.csv
+
+# --- Model artifacts (binary, không cần version) ---
+models/*.joblib
+models/*.pkl
+
+# --- Streamlit cache ---
+.streamlit/secrets.toml
+
+# --- IDE / OS ---
+.DS_Store
+.vscode/
+# .idea/ giữ lại để JetBrains share project — chỉ ignore file rác bên trong
+.idea/workspace.xml
+.idea/shelf/
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries
+.idea/dataSources.local.xml
+
+# --- Logs ---
+*.log
