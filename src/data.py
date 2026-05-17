@@ -29,8 +29,12 @@ def load_raw(path: str | Path = DEFAULT_CSV) -> pd.DataFrame:
 
 
 def clean(df: pd.DataFrame) -> pd.DataFrame:
-    """Drop dup, fix dtypes, optional outlier handling. TODO: Bước 1."""
+    """Drop dup + drop post-stay snapshots."""
     df = df.drop_duplicates()
+    # updated_date > date = snapshot chụp sau đêm khách ở. Khách không thể book
+    # đêm đã qua → mọi thay đổi total_booked là admin (no-show, cancel, refund),
+    # không phải demand response to price. Giữ lại sẽ làm méo label did_book.
+    df = df[df['date'] >= df['updated_date']].reset_index(drop=True)
     return df
 
 

@@ -24,6 +24,7 @@ holidays>=0.40            # locale 'VN' đã hỗ trợ Tết, 30/4, 2/9
 # ---- App + Viz ----
 streamlit>=1.30
 plotly>=5.18
+matplotlib>=3.7         # EDA notebooks (Plotly cho app, Matplotlib cho notebook)
 
 # ---- Persistence ----
 joblib>=1.3

@@ -8,6 +8,8 @@ __pycache__/
 *$py.class
 .Python
 .venv/
+# .venv bare = symlink to project-root .venv (worktree workflow)
+.venv
 venv/
 env/
 *.egg-info/
@@ -23,6 +25,13 @@ data/processed/*.csv
 # --- Model artifacts (binary, không cần version) ---
 models/*.joblib
 models/*.pkl
+
+# --- Notebook exports (gen lại từ .ipynb bất kỳ lúc nào) ---
+notebooks/*.html
+notebooks/*.pdf
+
+# --- Claude Code worktree state ---
+.claude/
 
 # --- Streamlit cache ---
 .streamlit/secrets.toml
