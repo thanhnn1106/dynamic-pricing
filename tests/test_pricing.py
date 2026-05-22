@@ -146,13 +146,43 @@ def test_to_frame_shape(sample_row, forecast_result, demand_logreg):
     assert list(df.columns) == ["price", "prob_book", "expected_revenue"]
 
 
-def test_invalid_bounds_raises(sample_row, demand_logreg):
-    """Negative/zero bound → ValueError."""
+def test_negative_p10_uses_p50_anchor(sample_row, demand_logreg):
+    """SARIMAX extrapolate → p10 âm. Optimizer phải dùng p50 làm anchor,
+    floor low ≥ p50 × 0.3."""
+    idx = pd.DatetimeIndex(["2026-08-01"])
     fake_forecast = ForecastResult(
-        index=pd.DatetimeIndex(["2026-08-01"]),
-        p10=pd.Series([-100.0], index=pd.DatetimeIndex(["2026-08-01"])),
-        p50=pd.Series([100.0], index=pd.DatetimeIndex(["2026-08-01"])),
-        p90=pd.Series([200.0], index=pd.DatetimeIndex(["2026-08-01"])),
+        index=idx,
+        p10=pd.Series([-100.0], index=idx),
+        p50=pd.Series([1000.0], index=idx),
+        p90=pd.Series([2000.0], index=idx),
     )
-    with pytest.raises(ValueError, match="Invalid price grid bounds"):
+    out = optimize_price(sample_row, fake_forecast, demand_logreg)
+    assert out.price_grid[0] == 1000.0 * 0.3    # p50 anchor kicked in
+    assert out.price_grid[-1] == 2000.0 * 1.3   # p90 × 1.3 still wins (positive)
+
+
+def test_both_p10_p90_negative_uses_p50_anchor(sample_row, demand_logreg):
+    """Cả p10 và p90 âm nhưng p50 dương → vẫn build được grid quanh p50."""
+    idx = pd.DatetimeIndex(["2026-08-01"])
+    fake_forecast = ForecastResult(
+        index=idx,
+        p10=pd.Series([-2000.0], index=idx),
+        p50=pd.Series([500.0], index=idx),
+        p90=pd.Series([-100.0], index=idx),
+    )
+    out = optimize_price(sample_row, fake_forecast, demand_logreg)
+    assert out.price_grid[0] == 500.0 * 0.3     # 150
+    assert out.price_grid[-1] == 500.0 * 1.7    # 850
+
+
+def test_p50_nonpositive_raises(sample_row, demand_logreg):
+    """p50 <= 0 → forecast vô nghĩa, raise (không có anchor để fallback)."""
+    idx = pd.DatetimeIndex(["2026-08-01"])
+    fake_forecast = ForecastResult(
+        index=idx,
+        p10=pd.Series([-200.0], index=idx),
+        p50=pd.Series([-100.0], index=idx),
+        p90=pd.Series([-50.0], index=idx),
+    )
+    with pytest.raises(ValueError, match="p50"):
         optimize_price(sample_row, fake_forecast, demand_logreg)

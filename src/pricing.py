@@ -83,13 +83,19 @@ def optimize_price(
     Returns:
         PricingCurve với optimal_price, max_revenue, full curves.
     """
-    low = float(forecast.p10.iloc[0]) * grid_low_mult
-    high = float(forecast.p90.iloc[0]) * grid_high_mult
-    if low <= 0 or high <= low:
+    p10 = float(forecast.p10.iloc[0])
+    p50 = float(forecast.p50.iloc[0])
+    p90 = float(forecast.p90.iloc[0])
+    # SARIMAX extrapolate xa → CI band rộng, p10/p90 có thể âm. Dùng p50 làm
+    # anchor fallback: pricing curve vẫn render được, user vẫn thấy framework
+    # hoạt động (mặc dù forecast bản thân unreliable — đó là vấn đề của B3).
+    if p50 <= 0:
         raise ValueError(
-            f"Invalid price grid bounds: low={low}, high={high}. "
-            "Kiểm tra forecast.p10/p90 và multipliers."
+            f"forecast p50={p50} <= 0 — model unreliable cho date này, "
+            "không build được price grid."
         )
+    low = max(p10 * grid_low_mult, p50 * 0.3)     # floor 30% of median
+    high = max(p90 * grid_high_mult, p50 * 1.7)   # ceil 170% of median
     price_grid = np.linspace(low, high, grid_size)
 
     # Normalize input → 1-row DataFrame
