@@ -19,71 +19,144 @@ SAVVY-2BT.csv  ─►  src/data.py     ─►  src/features.py  ─►  data/pro
                                                   app/streamlit_app.py
 ```
 
+## Prerequisites
+
+- **Python 3.11 hoặc 3.12** — `pmdarima` chưa stable trên 3.13+
+- **macOS**: cần `libomp` cho LightGBM
+  ```bash
+  brew install libomp
+  ```
+- **Linux**: thường đã có `libgomp` qua build-essential
+
+## Setup
+
+```bash
+cd dynamic-pricing
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Symlink data:
+```bash
+# Từ data/raw/, link CSV (path tuỳ workspace của bạn)
+ln -s ../../../SAVVY-2BT.csv data/raw/SAVVY-2BT.csv
+```
+
+## Quick start — chạy end-to-end
+
+```bash
+source .venv/bin/activate
+
+# 1. Sinh features (clean + feature engineering, ~5s)
+python -c "from src.features import prepare_features; prepare_features()"
+
+# 2. Train 5 SARIMAX models (~2-3 phút)
+python -c "from src.forecast import train_all; print(train_all())"
+
+# 3. Train LogReg + LightGBM demand models (~10s)
+python -c "from src.demand import train_all; print(train_all())"
+
+# 4. Chạy app
+streamlit run app/streamlit_app.py
+```
+
+App tại `http://localhost:8501`.
+
+## App usage (cho Sale team)
+
+1. **Sidebar**: chọn chi nhánh + loại phòng + date range (max 60 ngày sau train end)
+2. **Get Price Forecast** → đồ thị median + 80% CI band cho range
+3. **Get Dynamic Pricing** → bảng per-date với:
+   - `forecast_p50` — giá đoán
+   - `optimal_price` — giá đề xuất tối đa hoá expected revenue
+   - `optimal_P(book)` — xác suất book ở giá đó
+   - `max_revenue` — `optimal_price × P(book)`
+   - Cờ `⚠️ at grid edge` (elasticity yếu, optimal ngoài range explore)
+   - Cờ `🟡 CI crossed 0` (forecast unreliable, p10 hoặc p90 âm)
+4. **Drill-down**: chọn 1 ngày → 2 chart `P(book) vs price` + `expected_revenue vs price`
+
+## Tests
+
+```bash
+pytest tests/ -v
+```
+
+38 tests covering: data schema, clean logic, build_series, ForecastModel save/load, optimize_price invariants (optimal ∈ grid, max_revenue = argmax), edge cases (p10/p90 âm, p50 ≤ 0).
+
+## Workflow phát triển (đã xong cả 7 bước)
+
+| # | Bước | Output |
+|---|---|---|
+| 1 | EDA | `notebooks/01_eda.ipynb` — 5 insight key, filter post-stay |
+| 2 | Features | `src/features.py` + `data/processed/features.parquet` (46,480 × 27) |
+| 3 | Forecast | `src/forecast.py` + 5 `models/forecast_*.joblib`, MAPE 20-31%, Coverage 73% |
+| 4 | Demand | `src/demand.py` + 2 `models/demand_*.joblib`, AUC 0.88 |
+| 5 | Pricing | `src/pricing.py` + 14 unit tests |
+| 6 | App | `app/streamlit_app.py` — Sale UI |
+| 7 | Polish | README + 38 tests + version pinning |
+
+Chi tiết kế hoạch + quyết định kỹ thuật xem `ROADMAP.md`.
+
 ## Cấu trúc thư mục
 
 ```
 dynamic-pricing/
-├── ROADMAP.md                      # kế hoạch chi tiết, các quyết định kỹ thuật
+├── ROADMAP.md                      # kế hoạch chi tiết
 ├── README.md                       # (file này)
 ├── requirements.txt
 ├── .gitignore
 ├── data/
-│   ├── raw/SAVVY-2BT.csv           # symlink, không commit
-│   └── processed/features.parquet  # gen ra từ src/features.py
+│   ├── raw/SAVVY-2BT.csv           # symlink, gitignored
+│   └── processed/features.parquet  # gen ra từ prepare_features()
 ├── notebooks/
 │   ├── 01_eda.ipynb
 │   ├── 02_features.ipynb
 │   ├── 03_forecast.ipynb
 │   └── 04_demand_curve.ipynb
 ├── src/                            # production code
-│   ├── data.py                     # load + clean
-│   ├── features.py                 # feature engineering
-│   ├── forecast.py                 # SARIMAX forecast model
-│   ├── demand.py                   # demand classifier
-│   └── pricing.py                  # optimize price (argmax expected revenue)
+│   ├── data.py                     # load_raw, clean
+│   ├── features.py                 # build_features, prepare_features, save_features
+│   ├── forecast.py                 # ForecastModel, build_series, train_all
+│   ├── demand.py                   # DemandModel, prepare_X_y, time_split, train_all
+│   └── pricing.py                  # optimize_price, PricingCurve
 ├── models/                         # joblib artifacts (gitignored)
 ├── app/streamlit_app.py            # UI cho Sale team
-└── tests/                          # pytest
+└── tests/                          # pytest (38 tests)
 ```
-
-## Setup
-
-```bash
-cd dynamic-pricing
-python3.11 -m venv .venv          # Python 3.11/3.12 ổn nhất với pmdarima
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-## Chạy app
-
-```bash
-source .venv/bin/activate
-streamlit run app/streamlit_app.py
-```
-
-App chạy ở `http://localhost:8501`.
-
-## Workflow phát triển
-
-Đi tuần tự theo `ROADMAP.md`:
-
-1. **Bước 1 — EDA** → `notebooks/01_eda.ipynb`
-2. **Bước 2 — Features** → fill `src/features.py`, sinh `data/processed/features.parquet`
-3. **Bước 3 — Forecast** → fill `src/forecast.py`, train + save `models/forecast_*.joblib`
-4. **Bước 4 — Demand** → fill `src/demand.py`, train + save `models/demand.joblib`
-5. **Bước 5 — Pricing** → fill `src/pricing.py` + unit test
-6. **Bước 6 — App** → fill `app/streamlit_app.py`
-7. **Bước 7 — Polish** → tests, doc, deploy notes
-
-## Data
-
-`data/raw/SAVVY-2BT.csv` (gitignored, ~7MB) — snapshot inventory M Village SAVVY HBT.
-Symlink từ `../../SAVVY-2BT.csv` (workspace root). Schema xem `ROADMAP.md` §1.
 
 ## Tech stack (đã chốt — xem `ROADMAP.md` §5)
 
 - Forecast: **SARIMAX** (`pmdarima.auto_arima`), per `(hotel_id, room_type)`, weekly seasonality `m=7`, 80% CI native.
-- Demand: **Logistic Regression baseline → LightGBM classifier**, target binary `did_book`.
+- Demand: **Logistic Regression baseline + LightGBM**, target binary `did_book`.
 - Holiday: **`holidays.country_holidays('VN')`**.
 - App: **Streamlit + Plotly**.
+
+## Known limitations (POC scope)
+
+1. **Lệch ROADMAP**: forecast target dùng "snapshot ở fixed lead_time=30" thay vì "latest snapshot per stay_date". Lý do: `updated_date` data chỉ 2026-01-02 → 2026-05-04, late stay_dates không có near-stay snapshot → train/holdout khác domain → MAPE 66% với convention ROADMAP. Fixed lead_time → MAPE 27%. Chi tiết: commit message Bước 3.
+
+2. **MAPE forecast 20-31%** vẫn cao cho production (mục tiêu <10%). Phase 2: log-transform price, data dài hơn (cần ≥6 tháng updated_date), thêm exog (event calendar).
+
+3. **Demand elasticity yếu**: LogReg `price` coef chỉ -0.21 (mạnh: lead_time -1.73). Optimal price hay rơi vào edge grid → cờ `⚠️` trong app. Phase 2 cần A/B test thật để có causal estimate.
+
+4. **Predictive ≠ causal**: data thiếu counterfactual. Model học correlation. Không khuyến nghị deploy autonomous mà cần Sale review.
+
+5. **Forecast horizon ≤ 60 ngày**: xa hơn CI band phình to/âm, app cap cứng để tránh user nhận garbage output.
+
+## Data
+
+`data/raw/SAVVY-2BT.csv` (gitignored, ~7MB) — snapshot inventory M Village SAVVY HBT.
+
+Schema (13 cột):
+
+| Cột | Ý nghĩa |
+|---|---|
+| `updated_date` | Ngày chụp snapshot |
+| `date` | Stay night (đêm khách thực ở) |
+| `hotel_id`, `hotel_name` | Chi nhánh (POC chỉ có 1 hotel) |
+| `room_type_name`, `room_type_segment`, `brand_sub_segment` | Phân loại phòng |
+| `total`, `total_booked`, `total_maintenance`, `available` | Inventory state |
+| `price`, `ota_price` | Giá direct & OTA |
+
+55,225 rows raw → 46,480 sau `clean()` (drop 15.84% post-stay snapshots).
