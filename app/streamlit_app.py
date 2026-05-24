@@ -133,7 +133,7 @@ def fmt_vnd(v: float) -> str:
 # ======================================================================
 # UI
 # ======================================================================
-st.set_page_config(page_title="Dynamic Pricing — M Village", layout="wide")
+st.set_page_config(page_title="Dynamic Pricing — SAMV HBT", layout="wide")
 st.title("Dynamic Pricing")
 st.caption("POC — forecast giá phòng + đề xuất giá tối ưu cho Sale team")
 
