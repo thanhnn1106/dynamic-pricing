@@ -37,6 +37,9 @@ models/*.pkl
 .idea/usage.statistics.xml
 .idea/dictionaries
 .idea/dataSources.local.xml
+.idea/
 
 # --- Logs ---
 *.log
+
+.claude/
