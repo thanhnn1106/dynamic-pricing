@@ -84,6 +84,48 @@ pytest tests/ -v
 
 38 tests covering: data schema, clean logic, build_series, ForecastModel save/load, optimize_price invariants (optimal ∈ grid, max_revenue = argmax), edge cases (p10/p90 âm, p50 ≤ 0).
 
+## Deploy lên Streamlit Cloud
+
+App đã được setup để deploy thẳng lên [share.streamlit.io](https://share.streamlit.io) (free tier).
+
+**File đã commit cho deploy** (override `.gitignore`):
+- `data/processed/features.parquet` (104KB) — input cho app
+- `models/forecast_*.joblib` × 5 (9.4MB) + `models/demand_*.joblib` × 2 (1.3MB)
+- `.python-version` → 3.11 (Streamlit Cloud auto-detect)
+- `packages.txt` → `libgomp1` (LightGBM Linux dependency)
+- `.streamlit/config.toml` → theme + headless mode
+
+**KHÔNG commit**:
+- `data/raw/*.csv` — chỉ cần khi re-train, app runtime đọc parquet
+- `.streamlit/secrets.toml` — credentials (nếu có sau này)
+
+### Steps để deploy
+
+1. **Push repo lên GitHub** (public):
+   ```bash
+   git push -u origin sanitize-hotel-name      # hoặc merge → main rồi push main
+   ```
+
+2. **Vào [share.streamlit.io](https://share.streamlit.io)** → "New app":
+   - Repository: `<your-username>/dynamic-pricing`
+   - Branch: branch chứa deploy artifacts (vd `main` hoặc `sanitize-hotel-name`)
+   - Main file path: `app/streamlit_app.py`
+   - Python version: 3.11 (auto-detect từ `.python-version`)
+
+3. **Click Deploy**. First boot ~2 phút (pip install pmdarima + lightgbm). Subsequent boot ~30s (cached).
+
+4. App URL sẽ là `https://<your-slug>.streamlit.app`.
+
+### Re-deploy
+
+Streamlit Cloud auto-redeploy khi push lên branch đã connect. Nếu re-train models locally rồi push, app tự reload với models mới.
+
+### Limitations free tier
+
+- 1GB memory — đủ cho 7 joblibs + parquet
+- App "ngủ" sau ~1 tuần không có traffic, wake-up khi có request mới (lag 30s)
+- Không persistent storage — mỗi reboot mất state
+
 ## Workflow phát triển (đã xong cả 7 bước)
 
 | # | Bước | Output |

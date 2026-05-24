@@ -21,10 +21,15 @@ data/raw/*.csv
 data/raw/*.parquet
 data/processed/*.parquet
 data/processed/*.csv
+# Exception: commit processed features cho Streamlit Cloud deploy
+!data/processed/features.parquet
 
 # --- Model artifacts (binary, không cần version) ---
 models/*.joblib
 models/*.pkl
+# Exception: commit trained models cho Streamlit Cloud deploy
+!models/forecast_*.joblib
+!models/demand_*.joblib
 
 # --- Notebook exports (gen lại từ .ipynb bất kỳ lúc nào) ---
 notebooks/*.html
