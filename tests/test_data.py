@@ -9,11 +9,11 @@ import pytest
 from src.data import clean, load_raw
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-CSV_PATH = PROJECT_ROOT / "data" / "raw" / "SAVVY-2BT.csv"
+CSV_PATH = PROJECT_ROOT / "data" / "raw" / "SAMV-HBT.csv"
 
 pytestmark = pytest.mark.skipif(
     not CSV_PATH.exists(),
-    reason="Cần data/raw/SAVVY-2BT.csv (symlink workspace CSV).",
+    reason="Cần data/raw/SAMV-HBT.csv (sanitized hotel inventory).",
 )
 
 

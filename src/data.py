@@ -1,21 +1,19 @@
-"""Load + clean the SAVVY inventory CSV.
+"""Load + clean hotel inventory CSV (sanitized cho public POC).
 
 Raw schema (13 cols):
     updated_date, date, hotel_id, hotel_name, room_type_name,
     total_booked, total_maintenance, total, available,
     price, ota_price, room_type_segment, brand_sub_segment
 
-Sẽ được điền ở Bước 1 (EDA) sau khi xác nhận:
-- dtypes phù hợp (parse_dates cho updated_date + date)
-- xử lý missing / duplicate
-- type validation cho price/available
+Note: CSV `SAMV-HBT.csv` là copy đã sanitize hotel_name từ raw data
+công ty (xem branch `sanitize-hotel-name`). File gốc không commit.
 """
 from __future__ import annotations
 
 from pathlib import Path
 import pandas as pd
 
-DEFAULT_CSV = Path(__file__).resolve().parents[1] / "data" / "raw" / "SAVVY-2BT.csv"
+DEFAULT_CSV = Path(__file__).resolve().parents[1] / "data" / "raw" / "SAMV-HBT.csv"
 
 
 def load_raw(path: str | Path = DEFAULT_CSV) -> pd.DataFrame:

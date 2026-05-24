@@ -1,11 +1,11 @@
 # Dynamic Pricing
 
-POC dự đoán giá phòng và xác suất booking cho chuỗi hotel M Village / SAVVY.
+POC dự đoán giá phòng và xác suất booking cho chuỗi khách sạn (dataset đã sanitize hotel_name cho public POC).
 
 Pipeline:
 
 ```
-SAVVY-2BT.csv  ─►  src/data.py     ─►  src/features.py  ─►  data/processed/features.parquet
+SAMV-HBT.csv  ─►  src/data.py     ─►  src/features.py  ─►  data/processed/features.parquet
                                                               │
                             ┌─────────────────────────────────┴─────────────────┐
                             ▼                                                   ▼
@@ -40,7 +40,7 @@ pip install -r requirements.txt
 Symlink data:
 ```bash
 # Từ data/raw/, link CSV (path tuỳ workspace của bạn)
-ln -s ../../../SAVVY-2BT.csv data/raw/SAVVY-2BT.csv
+ln -s ../../../SAMV-HBT.csv data/raw/SAMV-HBT.csv
 ```
 
 ## Quick start — chạy end-to-end
@@ -107,7 +107,7 @@ dynamic-pricing/
 ├── requirements.txt
 ├── .gitignore
 ├── data/
-│   ├── raw/SAVVY-2BT.csv           # symlink, gitignored
+│   ├── raw/SAMV-HBT.csv           # symlink, gitignored
 │   └── processed/features.parquet  # gen ra từ prepare_features()
 ├── notebooks/
 │   ├── 01_eda.ipynb
@@ -146,7 +146,7 @@ dynamic-pricing/
 
 ## Data
 
-`data/raw/SAVVY-2BT.csv` (gitignored, ~7MB) — snapshot inventory M Village SAVVY HBT.
+`data/raw/SAMV-HBT.csv` (gitignored, ~7MB) — snapshot inventory cho 1 hotel (`hotel_name = 'SAMV HBT'`, sanitized).
 
 Schema (13 cột):
 

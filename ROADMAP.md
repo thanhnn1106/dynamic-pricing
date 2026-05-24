@@ -11,7 +11,7 @@ Xây hai model + một internal app cho Sale team:
   2. Click **Get Price** → hiện đồ thị forecast (median line + CI band)
   3. Click **Get Dynamic Pricing** → hiện đồ thị `price` vs `P(book)` và `price` vs `expected_revenue`, đề xuất giá tối ưu
 
-## 1. Hiểu dữ liệu — `SAVVY-2BT.csv`
+## 1. Hiểu dữ liệu — `SAMV-HBT.csv`
 
 55,225 dòng. Các cột quan trọng:
 
@@ -26,7 +26,7 @@ Xây hai model + một internal app cho Sale team:
 
 **Feature quan trọng nhất cần derive: `lead_time = date − updated_date`** (số ngày trước stay night). Trong hotel pricing, lead_time là biến giải thích price/demand mạnh nhất.
 
-⚠️ Verify ở Bước 1: CSV này có bao nhiêu hotel? Sample chỉ thấy `hotel_id=956 (SAVVY HBT)`. Nếu chỉ 1 hotel → dropdown chi nhánh chỉ có 1 lựa chọn cho POC; sau này hook vào reporting Postgres để mở rộng.
+⚠️ Verify ở Bước 1: CSV này có bao nhiêu hotel? Sample chỉ thấy `hotel_id=956 (SAMV HBT)`. Nếu chỉ 1 hotel → dropdown chi nhánh chỉ có 1 lựa chọn cho POC; sau này hook vào reporting Postgres để mở rộng.
 
 ## 2. Cấu trúc thư mục đề xuất
 
@@ -37,7 +37,7 @@ dynamic-pricing/
 ├── requirements.txt
 ├── .gitignore
 ├── data/
-│   ├── raw/SAVVY-2BT.csv         (gitignore — link/copy từ workspace)
+│   ├── raw/SAMV-HBT.csv          (gitignore — sanitized copy của data công ty)
 │   └── processed/features.parquet
 ├── notebooks/
 │   ├── 01_eda.ipynb
@@ -64,7 +64,7 @@ dynamic-pricing/
 - Tạo `requirements.txt`: pandas, numpy, scikit-learn, **statsmodels**, **pmdarima**, lightgbm (cho demand model), plotly, streamlit, joblib, pyarrow, **holidays**, python-dateutil
 - Mở rộng `.gitignore`: `.venv/`, `data/raw/*.csv`, `models/*.joblib`, `__pycache__/`, `.DS_Store`, `notebooks/.ipynb_checkpoints/`
 - Tạo skeleton folders + empty `__init__.py`
-- Symlink CSV: `ln -s ../../../../SAVVY-2BT.csv data/raw/SAVVY-2BT.csv` (từ `data/raw/` lên `AI-Course/` cần 4 cấp `../`)
+- Place sanitized CSV ở `data/raw/SAMV-HBT.csv` (xem branch `sanitize-hotel-name` cho logic clone + rename hotel_name)
 - Commit `init: project scaffold` và push lên `github.com/thanhnn1106/dynamic-pricing`
 
 ### Bước 1 — EDA (~2–3 giờ) → `notebooks/01_eda.ipynb`
