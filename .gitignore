@@ -31,9 +31,14 @@ models/*.pkl
 !models/forecast_*.joblib
 !models/demand_*.joblib
 
-# --- Notebook exports (gen lại từ .ipynb bất kỳ lúc nào) ---
+# --- Notebook exports ---
 notebooks/*.html
 notebooks/*.pdf
+# Exception: commit notebook HTMLs cho Streamlit multi-page app
+!notebooks/01_eda.html
+!notebooks/02_features.html
+!notebooks/03_forecast.html
+!notebooks/04_demand_curve.html
 
 # --- Claude Code worktree state ---
 .claude/
@@ -44,16 +49,7 @@ notebooks/*.pdf
 # --- IDE / OS ---
 .DS_Store
 .vscode/
-# .idea/ giữ lại để JetBrains share project — chỉ ignore file rác bên trong
-.idea/workspace.xml
-.idea/shelf/
-.idea/tasks.xml
-.idea/usage.statistics.xml
-.idea/dictionaries
-.idea/dataSources.local.xml
 .idea/
 
 # --- Logs ---
 *.log
-
-.claude/

@@ -137,6 +137,15 @@ st.set_page_config(page_title="Dynamic Pricing — SAMV HBT", layout="wide")
 st.title("Dynamic Pricing")
 st.caption("POC — forecast giá phòng + đề xuất giá tối ưu cho Sale team")
 
+# Quick-nav menu sang 4 notebook walkthroughs
+with st.container(border=True):
+    st.markdown("**📚 Methodology walkthroughs** — notebook rendered cho từng bước")
+    cols = st.columns(4)
+    cols[0].page_link("pages/01_EDA.py", label="**Bước 1** — EDA", icon="📊")
+    cols[1].page_link("pages/02_Features.py", label="**Bước 2** — Features", icon="🛠️")
+    cols[2].page_link("pages/03_Forecast.py", label="**Bước 3** — Forecast", icon="📈")
+    cols[3].page_link("pages/04_Demand.py", label="**Bước 4** — Demand", icon="📉")
+
 features_df = load_features()
 holiday_set = vn_holidays()
 
