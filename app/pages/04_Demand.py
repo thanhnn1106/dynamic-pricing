@@ -4,7 +4,6 @@ from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Demand — Bước 4", layout="wide")
 st.title("Bước 4 — Demand Model")
 st.caption("Notebook `04_demand_curve.ipynb` — LogReg + LightGBM, elasticity check, demand curve viz.")
 

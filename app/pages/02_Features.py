@@ -4,7 +4,6 @@ from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Features — Bước 2", layout="wide")
 st.title("Bước 2 — Feature engineering")
 st.caption("Notebook `02_features.ipynb` — lead_time bucket, calendar, cyclic encoding, did_book label.")
 

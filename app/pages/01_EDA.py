@@ -4,7 +4,6 @@ from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="EDA — Bước 1", layout="wide")
 st.title("Bước 1 — EDA")
 st.caption("Notebook `01_eda.ipynb` — schema check, cardinality, price variation, SARIMA feasibility.")
 

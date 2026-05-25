@@ -4,7 +4,6 @@ from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Forecast — Bước 3", layout="wide")
 st.title("Bước 3 — SARIMAX Forecast")
 st.caption("Notebook `03_forecast.ipynb` — train 5 models per (hotel, room_type), MAPE/Coverage metrics.")
 
