@@ -28,6 +28,7 @@ from src.forecast import (
     DEFAULT_FEATURES, EXOG_COLS, ForecastModel, ForecastResult, model_path,
 )
 from src.forecast_prophet import ProphetForecastModel, model_path_prophet
+from src.forecast_lstm import LSTMForecastModel, model_path_lstm
 from src.pricing import optimize_price
 
 
@@ -41,13 +42,16 @@ def load_features() -> pd.DataFrame:
 
 @st.cache_resource
 def load_forecast(hotel_id: int, room_type: str, kind: str = "sarimax"):
-    """Dispatch theo `kind`. Both backends mirror ForecastModel API (fit/predict/save/load).
+    """Dispatch 3-way. Tất cả mirror ForecastModel API.
 
-    `kind="sarimax"` (default) → SARIMAX với CI native calibrated (~73% coverage).
-    `kind="prophet"` → Prophet với MAPE thấp hơn 3× nhưng CI hẹp (~25% coverage).
+    - `sarimax`: MAPE ~27%, CI ~73% (calibrated) — best cho pricing optimization
+    - `prophet`: MAPE ~9%, CI ~25% (hẹp) — best point forecast theo decomposition
+    - `lstm`: MAPE ~7%, CI ~4% (cực hẹp) — best point forecast (PyTorch + MC Dropout)
     """
     if kind == "prophet":
         return ProphetForecastModel.load(model_path_prophet(hotel_id, room_type))
+    if kind == "lstm":
+        return LSTMForecastModel.load(model_path_lstm(hotel_id, room_type))
     return ForecastModel.load(model_path(hotel_id, room_type))
 
 
@@ -162,12 +166,13 @@ def pricing_page():
         room_type = st.selectbox("Loại phòng", room_types)
 
         forecast_kind = st.radio(
-            "Forecast model", ["sarimax", "prophet"], horizontal=True,
-            help="SARIMAX: MAPE 27%, CI ~73% (calibrated). "
-                 "Prophet: MAPE 9% (tốt hơn 3×) nhưng CI ~25% (hẹp).",
+            "Forecast model", ["sarimax", "prophet", "lstm"], horizontal=True,
+            help="SARIMAX: MAPE 27%, CI 73% (best cho pricing). "
+                 "Prophet: MAPE 9%, CI 25%. "
+                 "LSTM: MAPE 7% (best), CI 4% (rất hẹp).",
         )
-        if forecast_kind == "prophet":
-            st.caption("🟡 Prophet CI hẹp → pricing grid sẽ bị p50-anchor fallback nhiều hơn.")
+        if forecast_kind in ("prophet", "lstm"):
+            st.caption(f"🟡 {forecast_kind.upper()} CI hẹp → pricing grid p50-anchor fallback.")
 
         # Last train date của model này — đảm bảo date_from > đó
         fmodel = load_forecast(hotel_id, room_type, kind=forecast_kind)

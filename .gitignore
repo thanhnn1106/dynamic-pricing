@@ -29,6 +29,8 @@ models/*.joblib
 models/*.pkl
 # Exception: commit trained models cho Streamlit Cloud deploy
 !models/forecast_*.joblib
+!models/forecast_prophet_*.joblib
+!models/forecast_lstm_*.joblib
 !models/demand_*.joblib
 
 # --- Notebook exports ---
