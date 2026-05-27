@@ -347,5 +347,6 @@ nav = st.navigation([
     st.Page("pages/02_Features.py", title="Bước 2 — Features", icon="🛠️"),
     st.Page("pages/03_Forecast.py", title="Bước 3 — Forecast", icon="📈"),
     st.Page("pages/04_Demand.py", title="Bước 4 — Demand", icon="📉"),
+    st.Page("pages/05_Comparison.py", title="Bước 8 — Compare", icon="⚖️"),
 ])
 nav.run()
