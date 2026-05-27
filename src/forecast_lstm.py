@@ -23,33 +23,48 @@ from typing import Optional
 import joblib
 import numpy as np
 import pandas as pd
-import torch
-import torch.nn as nn
+
+try:
+    import torch
+    import torch.nn as nn
+    HAS_TORCH = True
+except ImportError:
+    HAS_TORCH = False
 
 from .forecast import EXOG_COLS, ForecastResult, _slugify
+
+
+def _require_torch():
+    if not HAS_TORCH:
+        raise ImportError(
+            "PyTorch not installed. LSTM backend unavailable. "
+            "Install với `pip install torch`."
+        )
 
 DEFAULT_FEATURES = Path(__file__).resolve().parents[1] / "data" / "processed" / "features.parquet"
 MODELS_DIR = Path(__file__).resolve().parents[1] / "models"
 
 
-class _LSTMNet(nn.Module):
-    def __init__(self, feature_dim: int, hidden_size: int = 32,
-                 num_layers: int = 1, dropout: float = 0.3):
-        super().__init__()
-        self.lstm = nn.LSTM(
-            input_size=feature_dim, hidden_size=hidden_size,
-            num_layers=num_layers, batch_first=True,
-            dropout=dropout if num_layers > 1 else 0.0,
-        )
-        self.dropout = nn.Dropout(dropout)
-        self.fc = nn.Linear(hidden_size, 1)
+if HAS_TORCH:
+    class _LSTMNet(nn.Module):
+        def __init__(self, feature_dim: int, hidden_size: int = 32,
+                     num_layers: int = 1, dropout: float = 0.3):
+            super().__init__()
+            self.lstm = nn.LSTM(
+                input_size=feature_dim, hidden_size=hidden_size,
+                num_layers=num_layers, batch_first=True,
+                dropout=dropout if num_layers > 1 else 0.0,
+            )
+            self.dropout = nn.Dropout(dropout)
+            self.fc = nn.Linear(hidden_size, 1)
 
-    def forward(self, x):
-        # x: (batch, seq_len, feature_dim)
-        out, _ = self.lstm(x)
-        last = out[:, -1, :]          # last timestep output
-        last = self.dropout(last)
-        return self.fc(last).squeeze(-1)  # (batch,)
+        def forward(self, x):
+            out, _ = self.lstm(x)
+            last = out[:, -1, :]
+            last = self.dropout(last)
+            return self.fc(last).squeeze(-1)
+else:
+    _LSTMNet = None    # placeholder — fit/predict raise via _require_torch()
 
 
 class LSTMForecastModel:
@@ -83,6 +98,7 @@ class LSTMForecastModel:
             hotel_id: Optional[int] = None, room_type: Optional[str] = None,
             epochs: int = 200, lr: float = 1e-3, patience: int = 20,
             verbose: bool = False) -> "LSTMForecastModel":
+        _require_torch()
         self.hotel_id = hotel_id
         self.room_type = room_type
         self.last_train_date = series.index[-1]
@@ -151,6 +167,7 @@ class LSTMForecastModel:
                 alpha: float = 0.2,        # alpha=0.2 → 80% CI (p10/p90)
                 index: Optional[pd.DatetimeIndex] = None,
                 mc_samples: int = 50) -> ForecastResult:
+        _require_torch()
         if self.model is None:
             raise RuntimeError("Model chưa fit. Gọi .fit() trước.")
         if index is None:
@@ -221,6 +238,7 @@ class LSTMForecastModel:
 
     @classmethod
     def load(cls, path: str | Path) -> "LSTMForecastModel":
+        _require_torch()
         state = joblib.load(Path(path))
         arch = state["arch"]
         inst = cls(seq_len=arch["seq_len"], hidden_size=arch["hidden_size"],

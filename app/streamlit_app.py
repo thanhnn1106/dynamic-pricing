@@ -28,8 +28,15 @@ from src.forecast import (
     DEFAULT_FEATURES, EXOG_COLS, ForecastModel, ForecastResult, model_path,
 )
 from src.forecast_prophet import ProphetForecastModel, model_path_prophet
-from src.forecast_lstm import LSTMForecastModel, model_path_lstm
 from src.pricing import optimize_price
+
+# LSTM optional — torch có thể không có wheel cho Python runtime (vd Streamlit
+# Cloud Python 3.14 + torch==2.2.2). Lazy import → graceful degrade.
+try:
+    from src.forecast_lstm import LSTMForecastModel, model_path_lstm
+    HAS_LSTM = True
+except ImportError:
+    HAS_LSTM = False
 
 
 # ======================================================================
@@ -51,6 +58,8 @@ def load_forecast(hotel_id: int, room_type: str, kind: str = "sarimax"):
     if kind == "prophet":
         return ProphetForecastModel.load(model_path_prophet(hotel_id, room_type))
     if kind == "lstm":
+        if not HAS_LSTM:
+            raise RuntimeError("LSTM unavailable — torch not installed in this env.")
         return LSTMForecastModel.load(model_path_lstm(hotel_id, room_type))
     return ForecastModel.load(model_path(hotel_id, room_type))
 
@@ -165,11 +174,13 @@ def pricing_page():
 
         room_type = st.selectbox("Loại phòng", room_types)
 
+        _forecast_opts = ["sarimax", "prophet"] + (["lstm"] if HAS_LSTM else [])
         forecast_kind = st.radio(
-            "Forecast model", ["sarimax", "prophet", "lstm"], horizontal=True,
+            "Forecast model", _forecast_opts, horizontal=True,
             help="SARIMAX: MAPE 27%, CI 73% (best cho pricing). "
                  "Prophet: MAPE 9%, CI 25%. "
-                 "LSTM: MAPE 7% (best), CI 4% (rất hẹp).",
+                 + ("LSTM: MAPE 7% (best), CI 4% (rất hẹp)."
+                    if HAS_LSTM else "LSTM disabled (torch không cài được env này).")
         )
         if forecast_kind in ("prophet", "lstm"):
             st.caption(f"🟡 {forecast_kind.upper()} CI hẹp → pricing grid p50-anchor fallback.")
