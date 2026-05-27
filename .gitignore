@@ -39,6 +39,7 @@ notebooks/*.pdf
 !notebooks/02_features.html
 !notebooks/03_forecast.html
 !notebooks/04_demand_curve.html
+!notebooks/05_model_comparison.html
 
 # --- Claude Code worktree state ---
 .claude/

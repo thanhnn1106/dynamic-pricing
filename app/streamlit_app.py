@@ -27,6 +27,7 @@ from src.demand import DemandModel, MODELS_DIR
 from src.forecast import (
     DEFAULT_FEATURES, EXOG_COLS, ForecastModel, ForecastResult, model_path,
 )
+from src.forecast_prophet import ProphetForecastModel, model_path_prophet
 from src.pricing import optimize_price
 
 
@@ -39,7 +40,14 @@ def load_features() -> pd.DataFrame:
 
 
 @st.cache_resource
-def load_forecast(hotel_id: int, room_type: str) -> ForecastModel:
+def load_forecast(hotel_id: int, room_type: str, kind: str = "sarimax"):
+    """Dispatch theo `kind`. Both backends mirror ForecastModel API (fit/predict/save/load).
+
+    `kind="sarimax"` (default) → SARIMAX với CI native calibrated (~73% coverage).
+    `kind="prophet"` → Prophet với MAPE thấp hơn 3× nhưng CI hẹp (~25% coverage).
+    """
+    if kind == "prophet":
+        return ProphetForecastModel.load(model_path_prophet(hotel_id, room_type))
     return ForecastModel.load(model_path(hotel_id, room_type))
 
 
@@ -153,10 +161,18 @@ def pricing_page():
 
         room_type = st.selectbox("Loại phòng", room_types)
 
+        forecast_kind = st.radio(
+            "Forecast model", ["sarimax", "prophet"], horizontal=True,
+            help="SARIMAX: MAPE 27%, CI ~73% (calibrated). "
+                 "Prophet: MAPE 9% (tốt hơn 3×) nhưng CI ~25% (hẹp).",
+        )
+        if forecast_kind == "prophet":
+            st.caption("🟡 Prophet CI hẹp → pricing grid sẽ bị p50-anchor fallback nhiều hơn.")
+
         # Last train date của model này — đảm bảo date_from > đó
-        fmodel = load_forecast(hotel_id, room_type)
+        fmodel = load_forecast(hotel_id, room_type, kind=forecast_kind)
         min_date = (fmodel.last_train_date + pd.Timedelta(days=1)).date()
-        # Cap forecast horizon: 60 ngày sau train end. Xa hơn → SARIMAX CI band
+        # Cap forecast horizon: 60 ngày sau train end. Xa hơn → CI band
         # phình to/âm (chỉ 103 ngày train), unreliable cho pricing.
         max_date = (fmodel.last_train_date + pd.Timedelta(days=60)).date()
         default_from = max(dt.date.today() + dt.timedelta(days=1), min_date)
@@ -188,7 +204,7 @@ def pricing_page():
                 st.error(str(e))
                 st.stop()
         st.session_state["fc"] = fc
-        st.session_state["fc_context"] = (hotel_id, room_type, demand_kind)
+        st.session_state["fc_context"] = (hotel_id, room_type, forecast_kind, demand_kind)
 
     if "fc" in st.session_state:
         fc: ForecastResult = st.session_state["fc"]
@@ -224,7 +240,7 @@ def pricing_page():
     st.subheader("2. Dynamic Pricing")
 
     fc_ready = "fc" in st.session_state and st.session_state.get("fc_context") == (
-        hotel_id, room_type, demand_kind,
+        hotel_id, room_type, forecast_kind, demand_kind,
     )
     if not fc_ready:
         st.info("⏳ Click **Get Price Forecast** trước (cho cùng config).")
