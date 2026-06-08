@@ -165,13 +165,16 @@ def pricing_page():
     holiday_set = vn_holidays()
 
     hotels = features_df[["hotel_id", "hotel_name"]].drop_duplicates().sort_values("hotel_id")
-    room_types = sorted(features_df["room_type_name"].unique())
 
     with st.sidebar:
         st.header("Lựa chọn")
         hotel_name = st.selectbox("Chi nhánh", hotels["hotel_name"].tolist())
         hotel_id = int(hotels.loc[hotels["hotel_name"] == hotel_name, "hotel_id"].iloc[0])
 
+        # Room types KHÁC nhau giữa các hotel → filter theo hotel đã chọn.
+        room_types = sorted(
+            features_df.loc[features_df["hotel_id"] == hotel_id, "room_type_name"].unique()
+        )
         room_type = st.selectbox("Loại phòng", room_types)
 
         _forecast_opts = ["sarimax", "prophet"] + (["lstm"] if HAS_LSTM else [])

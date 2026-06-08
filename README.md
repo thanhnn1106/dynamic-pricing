@@ -186,9 +186,14 @@ dynamic-pricing/
 
 5. **Forecast horizon ≤ 60 ngày**: xa hơn CI band phình to/âm, app cap cứng để tránh user nhận garbage output.
 
-## Data
+## Data — multi-hotel
 
-`data/raw/SAMV-HBT.csv` (gitignored, ~7MB) — snapshot inventory cho 1 hotel (`hotel_name = 'SAMV HBT'`, sanitized).
+2 sanitized CSV trong `data/raw/` (gitignored), `load_raw()` combine cả 2:
+
+| File | hotel_id | hotel_name | Rows | updated_date span | Rooms |
+|---|---|---|---|---|---|
+| `SAMV-HBT.csv` | 956 | SAMV HBT | 55K | 4 tháng | 5 |
+| `SIMV-HBT.csv` | 28 | SIMV HBT | 376K | 18 tháng | 7 (sau clean) |
 
 Schema (13 cột):
 
@@ -196,9 +201,14 @@ Schema (13 cột):
 |---|---|
 | `updated_date` | Ngày chụp snapshot |
 | `date` | Stay night (đêm khách thực ở) |
-| `hotel_id`, `hotel_name` | Chi nhánh (POC chỉ có 1 hotel) |
+| `hotel_id`, `hotel_name` | Chi nhánh (POC có 2 hotel) |
 | `room_type_name`, `room_type_segment`, `brand_sub_segment` | Phân loại phòng |
 | `total`, `total_booked`, `total_maintenance`, `available` | Inventory state |
 | `price`, `ota_price` | Giá direct & OTA |
 
-55,225 rows raw → 46,480 sau `clean()` (drop 15.84% post-stay snapshots).
+431,686 rows raw → 337,722 sau `clean()` (drop post-stay + price=0 + room name typo).
+
+**Insight quan trọng**: SIMV (18 tháng data) cho forecast tốt hơn hẳn SAMV (4 tháng):
+- SARIMAX MAPE: SIMV ~7% / Coverage ~100% vs SAMV ~27% / Coverage ~73%
+- → Confirm giả thuyết "data dài hơn → forecast chính xác hơn" (xem ROADMAP §3 caveat).
+- App dropdown filter room_types theo hotel đã chọn (room types khác nhau giữa 2 hotel).

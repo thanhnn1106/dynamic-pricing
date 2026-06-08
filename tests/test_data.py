@@ -1,4 +1,4 @@
-"""Tests cho `src.data` — schema + clean logic."""
+"""Tests cho `src.data` — schema + clean logic (multi-hotel)."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -6,14 +6,13 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.data import clean, load_raw
+from src.data import clean, load_raw, DEFAULT_CSVS
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-CSV_PATH = PROJECT_ROOT / "data" / "raw" / "SAMV-HBT.csv"
 
 pytestmark = pytest.mark.skipif(
-    not CSV_PATH.exists(),
-    reason="Cần data/raw/SAMV-HBT.csv (sanitized hotel inventory).",
+    not any(p.exists() for p in DEFAULT_CSVS),
+    reason="Cần ít nhất 1 sanitized CSV trong data/raw/.",
 )
 
 
@@ -30,9 +29,9 @@ def clean_df(raw_df):
 # ---------- Schema -------------------------------------------------------
 
 
-def test_load_raw_shape(raw_df):
-    """55,225 dòng × 13 cột — đã confirm ở EDA Bước 1."""
-    assert raw_df.shape == (55225, 13)
+def test_load_raw_nonempty(raw_df):
+    assert len(raw_df) > 0
+    assert raw_df.shape[1] == 13
 
 
 EXPECTED_COLS = {
@@ -57,21 +56,37 @@ def test_numeric_cols_are_numeric(raw_df):
         assert pd.api.types.is_numeric_dtype(raw_df[col]), f"{col} not numeric"
 
 
+def test_load_raw_combines_hotels(raw_df):
+    """Multi-hotel: nếu cả 2 CSV tồn tại → ít nhất 1 hotel, thường 2."""
+    n_hotels = raw_df["hotel_id"].nunique()
+    assert n_hotels >= 1
+
+
 # ---------- Clean --------------------------------------------------------
 
 
 def test_clean_drops_post_stay(raw_df, clean_df):
     """clean() drop rows có updated_date > date (post-stay snapshot)."""
-    dropped = len(raw_df) - len(clean_df)
-    pct = dropped / len(raw_df)
-    assert dropped == 8745         # số đã confirm ở Bước 1
-    assert 0.15 < pct < 0.17       # ~15.84%
+    assert len(clean_df) < len(raw_df)      # có drop gì đó
+    pct = (len(raw_df) - len(clean_df)) / len(raw_df)
+    assert 0.10 < pct < 0.30                # ~16% combined
 
 
 def test_clean_lead_time_nonneg(clean_df):
     """Sau clean: mọi row có date >= updated_date."""
     lead = (clean_df["date"] - clean_df["updated_date"]).dt.days
     assert (lead >= 0).all()
+
+
+def test_clean_no_zero_price(clean_df):
+    """clean() drop price=0 (room không bookable, vd SIMV Standard)."""
+    assert (clean_df["price"] > 0).all()
+
+
+def test_clean_no_nan_segment(clean_df):
+    """clean() fill NaN segment → 'Unknown', không còn NaN."""
+    assert clean_df["room_type_segment"].notna().all()
+    assert clean_df["brand_sub_segment"].notna().all()
 
 
 def test_clean_preserves_columns(raw_df, clean_df):

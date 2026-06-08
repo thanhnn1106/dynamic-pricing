@@ -7883,12 +7883,18 @@ a.anchor-link {
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.forecast</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_series</span><span class="p">,</span> <span class="n">DEFAULT_FEATURES</span>
 
+<span class="c1"># Data giờ multi-hotel (SAMV 956 + SIMV 28). Notebook này demo trên SAMV.</span>
+<span class="c1"># Filter room_types theo hotel để khỏi load nhầm model của hotel khác.</span>
+<span class="n">HOTEL_ID</span> <span class="o">=</span> <span class="mi">956</span>
+
 <span class="n">df_feat</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">DEFAULT_FEATURES</span><span class="p">)</span>
-<span class="n">room_types</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">df_feat</span><span class="p">[</span><span class="s1">'room_type_name'</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+<span class="n">room_types</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+    <span class="n">df_feat</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df_feat</span><span class="p">[</span><span class="s1">'hotel_id'</span><span class="p">]</span> <span class="o">==</span> <span class="n">HOTEL_ID</span><span class="p">,</span> <span class="s1">'room_type_name'</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+<span class="p">)</span>
 
 <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="k">for</span> <span class="n">rt</span> <span class="ow">in</span> <span class="n">room_types</span><span class="p">:</span>
-    <span class="n">target</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">build_series</span><span class="p">(</span><span class="n">df_feat</span><span class="p">,</span> <span class="mi">956</span><span class="p">,</span> <span class="n">rt</span><span class="p">,</span> <span class="n">target_lead_time</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">target</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">build_series</span><span class="p">(</span><span class="n">df_feat</span><span class="p">,</span> <span class="n">HOTEL_ID</span><span class="p">,</span> <span class="n">rt</span><span class="p">,</span> <span class="n">target_lead_time</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
     <span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
     <span class="n">train</span><span class="p">,</span> <span class="n">hold</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="o">-</span><span class="mi">30</span><span class="p">],</span> <span class="n">target</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">30</span><span class="p">:]</span>
     <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
@@ -8083,6 +8089,104 @@ a.anchor-link {
 <tbody>
 <tr>
 <th>0</th>
+<td>28</td>
+<td>Deluxe with Balcony city view</td>
+<td>30</td>
+<td>539</td>
+<td>30</td>
+<td>(1, 1, 1)</td>
+<td>(0, 0, 2, 7)</td>
+<td>4.867901</td>
+<td>2.442874e+05</td>
+<td>100.000000</td>
+<td>models/forecast_28_deluxe_with_balcony_city_vi...</td>
+</tr>
+<tr>
+<th>1</th>
+<td>28</td>
+<td>Deluxe with balcony</td>
+<td>30</td>
+<td>539</td>
+<td>30</td>
+<td>(0, 1, 0)</td>
+<td>(1, 0, 0, 7)</td>
+<td>3.774625</td>
+<td>1.796493e+05</td>
+<td>100.000000</td>
+<td>models/forecast_28_deluxe_with_balcony.joblib</td>
+</tr>
+<tr>
+<th>2</th>
+<td>28</td>
+<td>Grand Suite</td>
+<td>30</td>
+<td>539</td>
+<td>30</td>
+<td>(3, 0, 2)</td>
+<td>(1, 0, 1, 7)</td>
+<td>12.270783</td>
+<td>1.135214e+06</td>
+<td>100.000000</td>
+<td>models/forecast_28_grand_suite.joblib</td>
+</tr>
+<tr>
+<th>3</th>
+<td>28</td>
+<td>Junior Suite</td>
+<td>30</td>
+<td>536</td>
+<td>30</td>
+<td>(3, 0, 2)</td>
+<td>(1, 0, 1, 7)</td>
+<td>11.780568</td>
+<td>8.932717e+05</td>
+<td>100.000000</td>
+<td>models/forecast_28_junior_suite.joblib</td>
+</tr>
+<tr>
+<th>4</th>
+<td>28</td>
+<td>Studio</td>
+<td>30</td>
+<td>539</td>
+<td>30</td>
+<td>(1, 1, 1)</td>
+<td>(1, 0, 0, 7)</td>
+<td>5.895454</td>
+<td>2.287799e+05</td>
+<td>100.000000</td>
+<td>models/forecast_28_studio.joblib</td>
+</tr>
+<tr>
+<th>5</th>
+<td>28</td>
+<td>Studio City View</td>
+<td>30</td>
+<td>539</td>
+<td>30</td>
+<td>(0, 1, 0)</td>
+<td>(2, 0, 0, 7)</td>
+<td>4.277212</td>
+<td>1.774300e+05</td>
+<td>100.000000</td>
+<td>models/forecast_28_studio_city_view.joblib</td>
+</tr>
+<tr>
+<th>6</th>
+<td>28</td>
+<td>Studio with balcony</td>
+<td>30</td>
+<td>523</td>
+<td>30</td>
+<td>(0, 1, 0)</td>
+<td>(1, 0, 1, 7)</td>
+<td>16.483229</td>
+<td>6.000909e+05</td>
+<td>93.333333</td>
+<td>models/forecast_28_studio_with_balcony.joblib</td>
+</tr>
+<tr>
+<th>7</th>
 <td>956</td>
 <td>Deluxe City View Room</td>
 <td>30</td>
@@ -8096,7 +8200,7 @@ a.anchor-link {
 <td>models/forecast_956_deluxe_city_view_room.joblib</td>
 </tr>
 <tr>
-<th>1</th>
+<th>8</th>
 <td>956</td>
 <td>Deluxe City View with banquette seating</td>
 <td>30</td>
@@ -8110,7 +8214,7 @@ a.anchor-link {
 <td>models/forecast_956_deluxe_city_view_with_banq...</td>
 </tr>
 <tr>
-<th>2</th>
+<th>9</th>
 <td>956</td>
 <td>Deluxe with banquette seating</td>
 <td>30</td>
@@ -8124,7 +8228,7 @@ a.anchor-link {
 <td>models/forecast_956_deluxe_with_banquette_seat...</td>
 </tr>
 <tr>
-<th>3</th>
+<th>10</th>
 <td>956</td>
 <td>Premier city view</td>
 <td>30</td>
@@ -8138,7 +8242,7 @@ a.anchor-link {
 <td>models/forecast_956_premier_city_view.joblib</td>
 </tr>
 <tr>
-<th>4</th>
+<th>11</th>
 <td>956</td>
 <td>Superior City View</td>
 <td>30</td>
@@ -8198,9 +8302,9 @@ a.anchor-link {
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>=== Summary ===
-MAPE     : mean=27.04%, range=[19.9%, 31.0%]
-RMSE     : mean=1,102,394
-Coverage : mean=73.3% (target 80%)
+MAPE     : mean=16.21%, range=[3.8%, 31.0%]
+RMSE     : mean=747,558
+Coverage : mean=88.3% (target 80%)
 </pre>
 </div>
 </div>
